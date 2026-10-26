@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ribocouple"
+version = "0.1.0"
+description = "RiboCouple: backbone-aligned residue-pair state for de novo RNA design"
+requires-python = ">=3.10"
+dependencies = [
+  "torch>=1.13", "torch-geometric", "dgl", "e3nn>=0.5.1",
+  "openbabel", "prody", "biopython", "numpy<2", "scipy", "pandas",
+  "pytorch-lightning", "torchmetrics", "matplotlib", "pillow", "hydra-core", "omegaconf", "einops",
+  "wandb", "beartype", "jaxtyping", "loguru", "ml-collections", "dm-tree",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["ribocouple*"]
+
+[tool.setuptools.package-dir]
+"" = "src"

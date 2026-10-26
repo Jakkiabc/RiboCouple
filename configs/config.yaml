@@ -1,0 +1,193 @@
+data_cfg:
+  csv_path: ${oc.env:RIBOCOUPLE_TRAIN_CSV} # Set to the training metadata CSV
+  bp_labels_root: ${oc.env:RIBOCOUPLE_BP_LABELS}
+  linear_effect: False
+ # contains labels/{pdb_name}.bp.npz with bp_matrix
+  filtering:
+    max_len: 150
+    min_len: 40
+  min_t: 0.01
+  samples_per_eval_length: 5
+  eval_length_step: 10
+  num_eval_lengths: 101
+  batch_size: 28
+  max_batch_size: 28
+  max_squared_res: 375_000
+  max_num_res_squared: 375_000
+  eval_batch_size: 5
+  num_workers: 4
+  prefetch_factor: 100
+
+interpolant:
+  min_t: 1e-2
+  rots:
+    train_schedule: linear
+    sample_schedule: exp
+    exp_rate: 10
+  trans:
+    train_schedule: linear
+    sample_schedule: linear
+  sampling:
+    num_timesteps: 50
+  self_condition: ${model.edge_features.self_condition}
+
+model:
+  use_flashipa: False
+  node_embed_size: 256
+  edge_embed_size: 128
+  symmetric: False
+  topology:
+    use_feedback: False
+    feedback_start_block: 3
+    feedback_scale: 0.3
+    detach_pair_prob: True
+  pair_recycle:
+    use_recycle: True
+    detach_pair_prob: True
+    recycle_scale: 1.0
+    pass1_pair_bce: False
+  sequence_head:
+    enabled: True
+    num_classes: 4
+    hidden_dim: 256
+    loss_weight: 1.0
+    freeze_trunk: True
+    # Ablation switches
+    use_pair_context: True   # False: only node_embed
+    use_node_embed: True     # False: only pair_context
+    # Pair-aware transformer sequence head (E4+).
+    # If False, uses the original 2-layer MLP.
+    use_transformer_head: True
+    transformer_num_layers: 4
+    transformer_num_heads: 8
+    transformer_hidden_dim: 256
+    transformer_dropout: 0.1
+    transformer_use_pair_bias: True  # False: plain residue self-attention
+    # E4.5 conditional pair-type branch.
+    # Labels are computed online from true sequence + true binary pair map:
+    # 0=AU, 1=GC, 2=GU, 3=OTHER. Loss is only applied on true paired positions.
+    use_pair_type_head: True
+    pair_type_num_classes: 4
+    transformer_use_pair_type_bias: True
+    # Sequence regularization for E4 sequence head.
+    # For the transformer-head baseline we disable them by default.
+    regularization:
+      gc:
+        enabled: False
+        target_gc: 0.52        # target GC fraction
+        lambda_gc: 0.5
+      mfe:
+        enabled: False
+        lambda_mfe: 0.05       # weight for MFE surrogate loss
+        threshold_per_nt: -0.3  # MFE threshold = threshold_per_nt * seq_len
+      pair_complementarity:
+        enabled: False
+        lambda_pair: 0.5       # weight for WC complementarity loss
+        prob_threshold: 0.8     # pairs with predicted prob >= threshold are pushed to be WC
+  node_features:
+    c_s: ${model.node_embed_size}
+    c_pos_emb: 128
+    c_timestep_emb: 128
+    embed_diffuse_mask: False
+    max_num_res: 2000
+    timestep_int: 1000
+  edge_features:
+    single_bias_transition_n: 2
+    c_s: ${model.node_embed_size}
+    c_p: ${model.edge_embed_size}
+    relpos_k: 64
+    use_rbf: True
+    num_rbf: 32
+    feat_dim: 64
+    num_bins: 22
+    self_condition: True
+  ipa:
+    c_s: ${model.node_embed_size}
+    c_z: ${model.edge_embed_size}
+    c_hidden: 128
+    no_heads: 8
+    no_qk_points: 8
+    no_v_points: 12
+    seq_tfmr_num_heads: 4
+    seq_tfmr_num_layers: 2
+    num_blocks: 6
+
+experiment:
+  debug: False
+  seed: 123
+  num_devices: 4
+  warm_start: null
+  warm_start_cfg_override: True
+  resume_from_checkpoint: null  # set to E4 checkpoint path to resume training
+  use_swa: False
+  validation:
+    save_pdbs: True
+    external_eval:
+      enabled: False
+      every_n_epochs: 1
+      sequence_source: both  # grnade | e4 | both
+      use_pair_rerank: False
+      rerank_topk: 10
+      rerank_score: topk_pair_sum
+      repo_root: null
+      rhofold_device: current
+      grnade_gpu_id: current
+      n_seqs_per_backbone: 8
+      temperature: 0.1
+      tm_threshold: 0.45
+      rmsd_threshold: 5.5
+      best_by: tm_score
+      rhofold_ckpt: null
+      tmscore_bin: null
+  batch_ot:
+    enabled: True
+    cost: kabsch
+    noise_per_sample: 1
+    permute: False
+  training:
+    min_plddt_mask: null
+    loss: se3_vf_loss
+    bb_atom_scale: 0.1
+    trans_scale: 0.1
+    translation_loss_weight: 2.0
+    t_normalize_clip: 0.9
+    rotation_loss_weights: 1.0
+    aux_loss_weight: 1.0
+    aux_loss_t_pass: 0.25
+    tors_loss_scale: 1.0
+    pair_bce_loss_weight: 1.0
+    pair_bce_label_smoothing: 0.0
+    seq_ce_loss_weight: 1.0
+    pair_type_ce_loss_weight: 0.2
+    pair_type_consistency_loss_weight: 0.05
+    pair_type_consistency_pair_threshold: 0.5
+    pair_type_consistency_conf_threshold: 0.5
+    num_non_frame_atoms: 0 # choose from [0, 3, 7]
+  wandb:
+    name: rna-frameflowv4_transformer_pairtype_bias_consist
+    project: se3-fm
+    save_code: false
+    tags: []
+    mode: "online" # can also save to `offline`
+    save_dir: ./wandb_logs
+  optimizer:
+    lr: 0.0001
+  trainer:
+    overfit_batches: 0
+    # max_steps: 120000
+    # min_steps: 1
+    min_epochs: 1
+    max_epochs: 200
+    accelerator: gpu
+    log_every_n_steps: 1
+    deterministic: False
+    strategy: ddp_find_unused_parameters_true
+    check_val_every_n_epoch: 1
+    accumulate_grad_batches: 1
+  checkpointer:
+    dirpath: ./checkpoints/${experiment.wandb.project}/${experiment.wandb.name}/${now:%Y-%m-%d}_${now:%H-%M-%S}
+    save_last: True
+    save_top_k: -1
+    monitor: train/loss
+    mode: min
+    every_n_epochs: 1

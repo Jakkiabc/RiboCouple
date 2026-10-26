@@ -1,0 +1,21 @@
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.cache/
+
+# Training artifacts and private/local datasets
+checkpoints/
+wandb/
+outputs/
+/data/
+datasets/
+*.ckpt
+*.pt
+*.pth
+
+# Generated structures and evaluation output
+generated_rna_bb_samples/
+evalsuite_metrics/
+dssr-*
