@@ -5,7 +5,7 @@
 RiboCouple infers a probabilistic residue-pair state from generated RNA backbone geometry, recycles binary pair probabilities through a second structural pass, and transfers binary and typed pair signals to sequence decoding as soft attention biases.
 
 **Preprint:** https://doi.org/10.64898/2026.10.15.759394
-**Model weights:** [GitHub Release v1.0.0](https://github.com/Jakkiabc/RiboCouple/releases/tag/v1.0.0) (`Ribocouple.ckpt`, plus a mirrored copy of the third-party RhoFold weights)
+**Model weights:** [GitHub Release v1.0.0](https://github.com/Jakkiabc/RiboCouple/releases/tag/v1.0.0)
 
 ## Usage
 
