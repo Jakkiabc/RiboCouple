@@ -5,7 +5,7 @@
 RiboCouple infers a probabilistic residue-pair state from generated RNA backbone geometry, recycles binary pair probabilities through a second structural pass, and transfers binary and typed pair signals to sequence decoding as soft attention biases.
 
 **Preprint:** https://doi.org/10.64898/2026.10.15.759394
-**Model weights:** [Google Drive folder](https://drive.google.com/drive/folders/1pD0lKtfeUsxtVxuPf7b-ayFK7E56wLeq?usp=drive_link)
+**Model weights:** [GitHub Release v1.0.0](https://github.com/Jakkiabc/RiboCouple/releases/tag/v1.0.0) (`Ribocouple.ckpt`, plus a mirrored copy of the third-party RhoFold weights)
 
 ## Usage
 
@@ -67,8 +67,8 @@ python scripts/score_pair_confidence.py \
 # Refold the sampled sequences with RhoFold and compare to the sampled backbones
 # (reads the <name>.fasta next to each <name>.pdb; use --fasta_dir if your
 #  sequences live elsewhere, or --pred_dir to score pre-folded PDBs instead.
-#  RhoFold code is bundled, weights are not — get RhoFold_pretrained.pt from
-#  the upstream RhoFold release)
+#  RhoFold code is bundled; RhoFold_pretrained.pt is mirrored in the GitHub
+#  release (third-party weights, see NOTICE.md), or get it from upstream RhoFold)
 python scripts/evaluate_refold.py \
   --backbone_dir generated_backbones/ \
   --rhofold_ckpt /path/to/RhoFold_pretrained.pt \
